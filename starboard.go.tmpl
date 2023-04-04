@@ -1,0 +1,81 @@
+{{/* Trigger: Reaction */}}
+{{/* Configuration variables */}}
+{{$reactionEmoji := "⭐"}}
+{{$minReactions := 3}} {{/* Number of reactions needed */}}
+{{$reactorRoleIDs := cslice 0}}  {{/* Instant star roles. Replace the 0 with a list of space separated role IDs. */}}
+{{$repostChannelID := 0}}  {{/* Replace 0 with the channel ID where starred posts should go. */}}
+
+{{$author := .ReactionMessage.Author}}
+{{$authorAvatar := $author.AvatarURL "256"}}
+{{$originalMessage := .ReactionMessage.Content}}
+{{$messageURL := (joinStr "/" "https://discord.com/channels" .Guild.ID .Channel.ID .ReactionMessage.ID)}}
+{{$media := ""}}
+{{$channelName := .Channel.Name}}
+{{$reactMember := getMember .User.ID}}
+
+{{$hasRole := "0"}}
+{{range $reactorRoleIDs}}
+    {{$roleID := toInt64 .}}
+    {{if in $reactMember.Roles $roleID}}
+        {{$hasRole = "1"}}
+    {{end}}
+{{end}}
+
+{{$starCount := 0}}
+{{range .ReactionMessage.Reactions}}
+    {{if eq .Emoji.Name $reactionEmoji}}
+        {{$starCount = .Count}}
+    {{end}}
+{{end}}
+
+{{if and (eq .Reaction.Emoji.Name $reactionEmoji) (or (ge $starCount $minReactions) (not (eq $hasRole "0")))}}
+
+  {{range .ReactionMessage.Attachments}} {{/* My behavior simply grabs the first */}}
+    {{if and (ne .Width 0) (not $media)}}
+        {{$media = .ProxyURL}}
+    {{end}}
+  {{end}}
+
+  {{$posted := dbGet .ReactionMessage.ID "posted"}}
+
+  {{$transformed := $posted.Value}}
+
+  {{if (not $transformed)}}
+    {{$transformed = "0"}}
+  {{end}}
+
+  {{if (eq $transformed "1")}}
+    {{$repostMessageID := dbGet .ReactionMessage.ID "repost"}}
+
+    {{$postToEdit := getMessage $repostChannelID $repostMessageID.Value}}
+
+    {{if (getMessage $repostChannelID $repostMessageID.Value)}}
+      {{editMessage $repostChannelID $repostMessageID.Value (complexMessageEdit "content" (joinStr "" "⭐**" $starCount "** | " .Channel.Mention) "silent" true "embed" (cembed
+        "author" (sdict "name" (joinStr "" $author.String) "icon_url" $authorAvatar)
+        "title" (joinStr "" "Original message") "url" $messageURL
+        "description" $originalMessage
+        "image" (sdict "url" $media)
+      ))}}
+    {{else}}
+      {{$sentMessage := sendMessageRetID $repostChannelID (complexMessage "content" (joinStr "" "⭐**" $starCount "** | " .Channel.Mention) "silent" true "embed" (cembed
+        "author" (sdict "name" (joinStr "" $author.String) "icon_url" $authorAvatar)
+        "title" (joinStr "" "Original message") "url" $messageURL
+        "description" $originalMessage
+        "image" (sdict "url" $media)
+      ))}}
+  
+      {{dbSet .ReactionMessage.ID "repost" (joinStr "" $sentMessage)}}
+      {{dbSet .ReactionMessage.ID "posted" "1"}}
+    {{end}}
+  {{else}}
+    {{$sentMessage := sendMessageRetID $repostChannelID (complexMessage "content" (joinStr "" "⭐**" $starCount "** | " .Channel.Mention) "silent" true "embed" (cembed
+      "author" (sdict "name" (joinStr "" $author.String) "icon_url" $authorAvatar)
+      "title" (joinStr "" "Original message") "url" $messageURL
+      "description" $originalMessage
+      "image" (sdict "url" $media)
+    ))}}
+
+    {{dbSet .ReactionMessage.ID "repost" (joinStr "" $sentMessage)}}
+    {{dbSet .ReactionMessage.ID "posted" "1"}}
+  {{end}}
+{{end}}
