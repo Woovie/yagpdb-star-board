@@ -22,3 +22,5 @@ It's pretty straightforward, you will see [variables at the top of the file](htt
 - `minReactions` sets the minimum number of reactions from all users that are needed in order for the post to get copied over. Using a greater than or equal to here.
 - `reactorRoleIDs` is a space separated list of role IDs which bypasses the number limit.
 - `repostChannelID` is what channel the starred posts get sent to.
+
+Once you have modified your variables, install the custom command in [YAGPDB in the management UI](https://yagpdb.xyz/manage), set it to trigger on react, and you are done!
