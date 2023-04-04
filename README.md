@@ -16,7 +16,7 @@ Less bots, more secure.
 
 ## How to use
 
-It's pretty straightforward, you will see (variables at the top of the file)[https://github.com/Woovie/yagpdb-star-board/blob/main/starboard.go.tmpl#L3-L6] which are what you should edit.
+It's pretty straightforward, you will see [variables at the top of the file](https://github.com/Woovie/yagpdb-star-board/blob/main/starboard.go.tmpl#L3-L6) which are what you should edit.
 
 - `reactionEmoji` sets what emoji will be used.
 - `minReactions` sets the minimum number of reactions from all users that are needed in order for the post to get copied over. Using a greater than or equal to here.
